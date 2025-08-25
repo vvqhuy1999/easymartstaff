@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Promotion Component</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .code-example {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .feature-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .feature-list li:before {
+            content: "✅ ";
+            margin-right: 10px;
+            color: #28a745;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test Promotion Component</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">📋 Tính năng đã cập nhật</h2>
+            <ul class="feature-list">
+                <li>Tự động sinh mã khuyến mãi theo format KM + 8 ký tự ngẫu nhiên</li>
+                <li>Trường mã khuyến mãi chỉ đọc (readonly) khi thêm mới</li>
+                <li>Nút sinh lại mã mới với icon 🔄</li>
+                <li>Mã được sinh tự động khi mở modal thêm mới</li>
+                <li>Logic sinh mã tương tự CodeGenerator.java của backend</li>
+                <li>Giao diện thân thiện với người dùng</li>
+                <li>Quản lý thời gian khuyến mãi linh hoạt</li>
+                <li>Hỗ trợ nhiều loại khuyến mãi (phần trăm, số tiền, điểm, mua X tặng Y)</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 Logic sinh mã</h2>
+            <div class="code-example">// Tạo mã theo format KM + 8 ký tự ngẫu nhiên
+const generatePromotionCode = () => {
+  const prefix = 'KM'
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let result = ''
+  
+  // Đảm bảo có ít nhất 1 chữ cái và 1 số
+  result += chars.charAt(Math.floor(Math.random() * 26)) // Chữ cái đầu tiên
+  result += chars.charAt(26 + Math.floor(Math.random() * 10)) // Số
+  
+  // Generate 6 ký tự còn lại
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.random() * chars.length)
+  }
+  
+  return prefix + result
+}</div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎯 Cách sử dụng</h2>
+            <ol>
+                <li>Nhấn nút "+ Thêm khuyến mãi mới"</li>
+                <li>Mã khuyến mãi sẽ được tự động sinh</li>
+                <li>Nếu muốn sinh mã mới, nhấn nút 🔄</li>
+                <li>Điền các thông tin còn lại</li>
+                <li>Chọn loại khuyến mãi và giá trị</li>
+                <li>Nhấn "Thêm mới" để lưu</li>
+                <li>Có thể điều chỉnh thời gian khuyến mãi</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">📱 Giao diện</h2>
+            <ul class="feature-list">
+                <li>Trường mã hiển thị với background xám nhạt</li>
+                <li>Nút sinh lại mã có icon 🔄 và tooltip</li>
+                <li>Text helper giải thích format mã</li>
+                <li>Responsive design cho mobile</li>
+                <li>Loading states và error handling</li>
+                <li>Stats cards hiển thị tổng quan</li>
+                <li>Bảng khuyến mãi với sorting và filtering</li>
+                <li>Modal xem chi tiết và chỉnh sửa</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Lưu ý:</strong> Component này đã được cập nhật để tự động sinh mã khuyến mãi 
+            theo đúng logic của CodeGenerator.java. Mã sẽ có format KM + 8 ký tự ngẫu nhiên, 
+            đảm bảo có ít nhất 1 chữ cái và 1 số.
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🚀 Để test component</h2>
+            <p>1. Chạy <code>npm run dev</code> trong terminal</p>
+            <p>2. Mở browser và truy cập đường dẫn được hiển thị</p>
+            <p>3. Điều hướng đến trang quản lý khuyến mãi</p>
+            <p>4. Test tính năng thêm mới và sinh mã tự động</p>
+            <p>5. Test tính năng chỉnh sửa và xóa khuyến mãi</p>
+            <p>6. Test các loại khuyến mãi khác nhau</p>
+        </div>
+    </div>
+</body>
+</html>

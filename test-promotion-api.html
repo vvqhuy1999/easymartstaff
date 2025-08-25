@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Promotion API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.danger {
+            background: #dc3545;
+        }
+        .button.danger:hover {
+            background: #c82333;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test Promotion API</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">🔌 Test API Endpoints</h2>
+            <button class="button" onclick="testGetAll()">GET /api/khuyenmai</button>
+            <button class="button" onclick="testGetById()">GET /api/khuyenmai/{id}</button>
+            <button class="button" onclick="testPost()">POST /api/khuyenmai</button>
+            <button class="button" onclick="testPut()">PUT /api/khuyenmai/{id}</button>
+            <button class="button danger" onclick="testDelete()">DELETE /api/khuyenmai/{id}</button>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">📊 Results</h2>
+            <div id="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 Manual Test</h2>
+            <input type="text" id="testId" placeholder="Nhập ID để test" style="padding: 8px; margin: 5px; width: 200px;">
+            <button class="button" onclick="testWithId()">Test với ID</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api/khuyenmai';
+        let currentPromotions = [];
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        async function testGetAll() {
+            try {
+                log('Testing GET /api/khuyenmai...');
+                const response = await fetch(API_BASE_URL);
+                log(`Response status: ${response.status}`);
+                log(`Response headers: ${JSON.stringify([...response.headers.entries()])}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentPromotions = data;
+                    log(`Success! Found ${data.length} promotions`, 'success');
+                    
+                    if (data.length > 0) {
+                        const first = data[0];
+                        log(`First promotion structure: ${JSON.stringify(first, null, 2)}`, 'success');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    log(`Error: ${errorText}`, 'error');
+                }
+            } catch (err) {
+                log(`Exception: ${err.message}`, 'error');
+            }
+        }
+
+        async function testGetById() {
+            if (currentPromotions.length === 0) {
+                log('No promotions available. Please run GET first.', 'error');
+                return;
+            }
+
+            const promo = currentPromotions[0];
+            const possibleIds = [promo.maKM, promo.couponCode, promo.id, promo._id].filter(Boolean);
+            
+            log(`Testing GET with possible IDs: ${JSON.stringify(possibleIds)}`);
+            
+            for (const id of possibleIds) {
+                try {
+                    log(`Testing GET ${API_BASE_URL}/${id}...`);
+                    const response = await fetch(`${API_BASE_URL}/${id}`);
+                    log(`GET ${id} status: ${response.status}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        log(`GET ${id} success: ${JSON.stringify(data, null, 2)}`, 'success');
+                    } else {
+                        const errorText = await response.text();
+                        log(`GET ${id} error: ${errorText}`, 'error');
+                    }
+                } catch (err) {
+                    log(`GET ${id} exception: ${err.message}`, 'error');
+                }
+            }
+        }
+
+        async function testPost() {
+            const testData = {
+                tenChuongTrinh: 'Test Khuyến Mãi',
+                couponCode: 'TEST123',
+                loaiKM: 'PhầnTrăm',
+                giaTriKM: 10,
+                ngayBatDau: new Date().toISOString(),
+                ngayKetThuc: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                trangThai: 1
+            };
+
+            try {
+                log('Testing POST /api/khuyenmai...');
+                log(`Data: ${JSON.stringify(testData, null, 2)}`);
+                
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                log(`Response status: ${response.status}`);
+                log(`Response headers: ${JSON.stringify([...response.headers.entries()])}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Success! Created promotion: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`Error: ${errorText}`, 'error');
+                }
+            } catch (err) {
+                log(`Exception: ${err.message}`, 'error');
+            }
+        }
+
+        async function testPut() {
+            if (currentPromotions.length === 0) {
+                log('No promotions available. Please run GET first.', 'error');
+                return;
+            }
+
+            const promo = currentPromotions[0];
+            const id = promo.maKM || promo.couponCode;
+            
+            if (!id) {
+                log('No valid ID found for update', 'error');
+                return;
+            }
+
+            const updateData = {
+                ...promo,
+                tenChuongTrinh: 'Updated Test Khuyến Mãi'
+            };
+
+            try {
+                log(`Testing PUT /api/khuyenmai/${id}...`);
+                log(`Data: ${JSON.stringify(updateData, null, 2)}`);
+                
+                const response = await fetch(`${API_BASE_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                log(`Response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Success! Updated promotion: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`Error: ${errorText}`, 'error');
+                }
+            } catch (err) {
+                log(`Exception: ${err.message}`, 'error');
+            }
+        }
+
+        async function testDelete() {
+            if (currentPromotions.length === 0) {
+                log('No promotions available. Please run GET first.', 'error');
+                return;
+            }
+
+            const promo = currentPromotions[0];
+            const possibleIds = [promo.maKM, promo.couponCode, promo.id, promo._id].filter(Boolean);
+            
+            log(`Testing DELETE with possible IDs: ${JSON.stringify(possibleIds)}`);
+            
+            for (const id of possibleIds) {
+                try {
+                    log(`Testing DELETE ${API_BASE_URL}/${id}...`);
+                    const response = await fetch(`${API_BASE_URL}/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    log(`DELETE ${id} status: ${response.status}`);
+                    
+                    if (response.ok) {
+                        log(`DELETE ${id} success!`, 'success');
+                    } else {
+                        const errorText = await response.text();
+                        log(`DELETE ${id} error: ${errorText}`, 'error');
+                    }
+                } catch (err) {
+                    log(`DELETE ${id} exception: ${err.message}`, 'error');
+                }
+            }
+        }
+
+        async function testWithId() {
+            const id = document.getElementById('testId').value.trim();
+            if (!id) {
+                log('Please enter an ID', 'error');
+                return;
+            }
+
+            try {
+                log(`Testing GET ${API_BASE_URL}/${id}...`);
+                const response = await fetch(`${API_BASE_URL}/${id}`);
+                log(`Response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Success! ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`Error: ${errorText}`, 'error');
+                }
+            } catch (err) {
+                log(`Exception: ${err.message}`, 'error');
+            }
+        }
+
+        // Auto-test khi load page
+        window.onload = function() {
+            log('Page loaded. Ready to test API endpoints.');
+        };
+    </script>
+</body>
+</html>

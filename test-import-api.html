@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Phiếu Nhập Hàng</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.success {
+            background: #28a745;
+        }
+        .test-button.error {
+            background: #dc3545;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        .form-group label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test API Phiếu Nhập Hàng</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Phiếu Nhập Hàng</h2>
+        <button class="test-button" onclick="testGetAllPhieuNhap()">Lấy tất cả phiếu nhập</button>
+        <button class="test-button" onclick="testCreatePhieuNhap()">Tạo phiếu nhập mới</button>
+        <button class="test-button" onclick="testUpdatePhieuNhap()">Cập nhật phiếu nhập</button>
+        <button class="test-button" onclick="testDeletePhieuNhap()">Xóa phiếu nhập</button>
+        
+        <div id="phieuNhapResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📦 Test Chi Tiết Phiếu Nhập</h2>
+        <button class="test-button" onclick="testGetAllChiTiet()">Lấy tất cả chi tiết</button>
+        <button class="test-button" onclick="testCreateChiTiet()">Tạo chi tiết mới</button>
+        <button class="test-button" onclick="testUpdateChiTiet()">Cập nhật chi tiết</button>
+        <button class="test-button" onclick="testDeleteChiTiet()">Xóa chi tiết</button>
+        
+        <div id="chiTietResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🏢 Test Nhà Cung Cấp & Nhân Viên</h2>
+        <button class="test-button" onclick="testGetAllNhaCungCap()">Lấy nhà cung cấp</button>
+        <button class="test-button" onclick="testGetAllNhanVien()">Lấy nhân viên</button>
+        <button class="test-button" onclick="testGetAllProducts()">Lấy sản phẩm</button>
+        
+        <div id="otherResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Test Form</h2>
+        <div class="form-group">
+            <label>Mã phiếu nhập:</label>
+            <input type="number" id="phieuNhapId" value="1" min="1" title="Mã phiếu nhập hàng" placeholder="Nhập mã phiếu nhập">
+        </div>
+        <div class="form-group">
+            <label>Mã nhà cung cấp:</label>
+            <input type="number" id="maNCC" value="1" min="1" title="Mã nhà cung cấp" placeholder="Nhập mã nhà cung cấp">
+        </div>
+        <div class="form-group">
+            <label>Mã nhân viên:</label>
+            <input type="number" id="maNV" value="1" min="1" title="Mã nhân viên" placeholder="Nhập mã nhân viên">
+        </div>
+        <div class="form-group">
+            <label>Trạng thái:</label>
+            <select id="trangThai" title="Trạng thái phiếu nhập">
+                <option value="CHUA_NHAP">Chưa nhập</option>
+                <option value="DANG_NHAP">Đang nhập</option>
+                <option value="DA_NHAP">Đã nhập</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Ghi chú:</label>
+            <input type="text" id="ghiChu" value="Test phiếu nhập" title="Ghi chú phiếu nhập" placeholder="Nhập ghi chú">
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api';
+        
+        // Helper functions
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.style.backgroundColor = isError ? '#f8d7da' : '#f8f9fa';
+            element.style.borderColor = isError ? '#f5c6cb' : '#dee2e6';
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function showStatus(message, isError = false) {
+            const status = document.createElement('div');
+            status.className = `status ${isError ? 'error' : 'success'}`;
+            status.textContent = message;
+            document.body.appendChild(status);
+            
+            setTimeout(() => {
+                status.remove();
+            }, 3000);
+        }
+
+        // Test functions for Phiếu Nhập Hàng
+        async function testGetAllPhieuNhap() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/phieunhaphang`);
+                const data = await response.json();
+                showResult('phieuNhapResult', data);
+                showStatus(`✅ Lấy thành công ${data.length} phiếu nhập`);
+            } catch (error) {
+                showResult('phieuNhapResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        async function testCreatePhieuNhap() {
+            try {
+                const phieuNhapData = {
+                    maNCC: parseInt(document.getElementById('maNCC').value),
+                    maNV: parseInt(document.getElementById('maNV').value),
+                    ngayTao: new Date().toISOString().split('T')[0],
+                    trangThai: document.getElementById('trangThai').value,
+                    ghiChu: document.getElementById('ghiChu').value,
+                    isDeleted: false
+                };
+
+                const response = await fetch(`${API_BASE_URL}/phieunhaphang`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(phieuNhapData)
+                });
+
+                const data = await response.json();
+                showResult('phieuNhapResult', data);
+                showStatus('✅ Tạo phiếu nhập thành công');
+            } catch (error) {
+                showResult('phieuNhapResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        async function testUpdatePhieuNhap() {
+            try {
+                const phieuNhapId = document.getElementById('phieuNhapId').value;
+                const phieuNhapData = {
+                    maNCC: parseInt(document.getElementById('maNCC').value),
+                    maNV: parseInt(document.getElementById('maNV').value),
+                    ngayTao: new Date().toISOString().split('T')[0],
+                    trangThai: document.getElementById('trangThai').value,
+                    ghiChu: document.getElementById('ghiChu').value + ' (Updated)',
+                    isDeleted: false
+                };
+
+                const response = await fetch(`${API_BASE_URL}/phieunhaphang/${phieuNhapId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(phieuNhapData)
+                });
+
+                const data = await response.json();
+                showResult('phieuNhapResult', data);
+                showStatus('✅ Cập nhật phiếu nhập thành công');
+            } catch (error) {
+                showResult('phieuNhapResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        async function testDeletePhieuNhap() {
+            try {
+                const phieuNhapId = document.getElementById('phieuNhapId').value;
+                const response = await fetch(`${API_BASE_URL}/phieunhaphang/${phieuNhapId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showResult('phieuNhapResult', { message: 'Xóa thành công' });
+                    showStatus('✅ Xóa phiếu nhập thành công');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                showResult('phieuNhapResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        // Test functions for Chi Tiết Phiếu Nhập
+        async function testGetAllChiTiet() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/chitietphieunhap`);
+                const data = await response.json();
+                showResult('chiTietResult', data);
+                showStatus(`✅ Lấy thành công ${data.length} chi tiết`);
+            } catch (error) {
+                showResult('chiTietResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        async function testCreateChiTiet() {
+            try {
+                const phieuNhapId = document.getElementById('phieuNhapId').value;
+                const chiTietData = {
+                    phieuNhapHang: { maPN: parseInt(phieuNhapId) },
+                    sanPham: { maSP: 1 },
+                    soLuong: 10,
+                    donGia: 50000,
+                    isDeleted: false
+                };
+
+                const response = await fetch(`${API_BASE_URL}/chitietphieunhap`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(chiTietData)
+                });
+
+                const data = await response.json();
+                showResult('chiTietResult', data);
+                showStatus('✅ Tạo chi tiết thành công');
+            } catch (error) {
+                showResult('chiTietResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        async function testUpdateChiTiet() {
+            try {
+                const chiTietData = {
+                    phieuNhapHang: { maPN: parseInt(document.getElementById('phieuNhapId').value) },
+                    sanPham: { maSP: 1 },
+                    soLuong: 15,
+                    donGia: 55000,
+                    isDeleted: false
+                };
+
+                const response = await fetch(`${API_BASE_URL}/chitietphieunhap/1`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(chiTietData)
+                });
+
+                const data = await response.json();
+                showResult('chiTietResult', data);
+                showStatus('✅ Cập nhật chi tiết thành công');
+            } catch (error) {
+                showResult('chiTietResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        async function testDeleteChiTiet() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/chitietphieunhap/1`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showResult('chiTietResult', { message: 'Xóa thành công' });
+                    showStatus('✅ Xóa chi tiết thành công');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                showResult('chiTietResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        // Test functions for other entities
+        async function testGetAllNhaCungCap() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/nhacungcap`);
+                const data = await response.json();
+                showResult('otherResult', data);
+                showStatus(`✅ Lấy thành công ${data.length} nhà cung cấp`);
+            } catch (error) {
+                showResult('otherResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        async function testGetAllNhanVien() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/nhanvien`);
+                const data = await response.json();
+                showResult('otherResult', data);
+                showStatus(`✅ Lấy thành công ${data.length} nhân viên`);
+            } catch (error) {
+                showResult('otherResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        async function testGetAllProducts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sanpham`);
+                const data = await response.json();
+                showResult('otherResult', data);
+                showStatus(`✅ Lấy thành công ${data.length} sản phẩm`);
+            } catch (error) {
+                showResult('otherResult', { error: error.message }, true);
+                showStatus(`❌ Lỗi: ${error.message}`, true);
+            }
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            showStatus('🚀 Trang test đã sẵn sàng! Hãy click vào các nút để test API.');
+        });
+    </script>
+</body>
+</html>

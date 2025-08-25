@@ -1,0 +1,580 @@
+<template>
+  <div class="chi-tiet-phieu-xuat-container">
+    <div class="header">
+      <h3>Chi tiết Phiếu Xuất #{{ phieuXuatId }}</h3>
+      <button @click="showAddModal = true" class="btn-add">
+        <i class="fas fa-plus"></i> Thêm Sản phẩm
+      </button>
+    </div>
+
+    <!-- Products Table -->
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Sản phẩm</th>
+            <th>Số lượng xuất</th>
+            <th>Đơn giá xuất</th>
+            <th>Thành tiền</th>
+            <th>Ghi chú</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="ct in chiTietList" :key="ct.maCTPXK" class="table-row">
+            <td>{{ ct.sanPham ? ct.sanPham.tenSP : 'N/A' }}</td>
+            <td>{{ ct.soLuongXuat }}</td>
+            <td>{{ formatCurrency(ct.donGiaXuat) }}</td>
+            <td>{{ formatCurrency(ct.thanhTien) }}</td>
+            <td>{{ ct.ghiChu || 'N/A' }}</td>
+            <td class="actions">
+              <button @click="editChiTiet(ct)" class="btn-edit" title="Sửa">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button @click="deleteChiTiet(ct.maCTPXK)" class="btn-delete" title="Xóa">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary">
+      <div class="summary-item">
+        <span class="label">Tổng số sản phẩm:</span>
+        <span class="value">{{ chiTietList.length }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Tổng tiền:</span>
+        <span class="value total-amount">{{ formatCurrency(totalAmount) }}</span>
+      </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div v-if="showAddModal || showEditModal" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>{{ showEditModal ? 'Sửa Chi tiết' : 'Thêm Sản phẩm' }}</h3>
+          <button @click="closeModal" class="close-btn">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form @submit.prevent="submitForm" class="modal-form">
+          <div class="form-group">
+            <label>Sản phẩm *</label>
+            <select v-model="formData.maSP" required class="form-input">
+              <option value="">Chọn sản phẩm</option>
+              <option v-for="sp in sanPhamList" :key="sp.maSP" :value="sp.maSP">
+                {{ sp.tenSP }} - {{ formatCurrency(sp.giaHienTai) }}
+              </option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Số lượng xuất *</label>
+              <input 
+                v-model.number="formData.soLuongXuat" 
+                type="number" 
+                min="1"
+                required
+                class="form-input"
+              />
+            </div>
+            <div class="form-group">
+              <label>Đơn giá xuất *</label>
+              <input 
+                v-model.number="formData.donGiaXuat" 
+                type="number" 
+                min="0"
+                step="1000"
+                required
+                class="form-input"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Ghi chú</label>
+            <textarea 
+              v-model="formData.ghiChu" 
+              class="form-input"
+              rows="3"
+              placeholder="Nhập ghi chú nếu có..."
+            ></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="closeModal" class="btn-cancel">
+              Hủy
+            </button>
+            <button type="submit" class="btn-submit">
+              {{ showEditModal ? 'Cập nhật' : 'Thêm' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-spinner"></div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { 
+  getAllChiTietPhieuXuat, 
+  createChiTietPhieuXuat, 
+  updateChiTietPhieuXuat, 
+  deleteChiTietPhieuXuat,
+  getAllSanPham
+} from '../api.js'
+
+export default {
+  name: 'ChiTietPhieuXuat',
+  props: {
+    phieuXuatId: {
+      type: [Number, String],
+      required: true
+    }
+  },
+  data() {
+    return {
+      chiTietList: [],
+      sanPhamList: [],
+      loading: false,
+      showAddModal: false,
+      showEditModal: false,
+      editingChiTiet: null,
+      formData: {
+        maSP: '',
+        soLuongXuat: 1,
+        donGiaXuat: 0,
+        ghiChu: ''
+      }
+    }
+  },
+  computed: {
+    totalAmount() {
+      return this.chiTietList.reduce((total, ct) => {
+        return total + (ct.thanhTien || 0)
+      }, 0)
+    }
+  },
+  async mounted() {
+    await this.loadData()
+  },
+  methods: {
+    async loadData() {
+      this.loading = true
+      try {
+        // Load chi tiết phiếu xuất
+        const chiTietData = await getAllChiTietPhieuXuat()
+        this.chiTietList = Array.isArray(chiTietData) ? chiTietData : []
+        
+        // Filter by phieuXuatId if needed
+        if (this.phieuXuatId) {
+          this.chiTietList = this.chiTietList.filter(ct => 
+            ct.phieuXuatKho && ct.phieuXuatKho.maPXK == this.phieuXuatId
+          )
+        }
+        
+        // Load san pham list
+        this.sanPhamList = await getAllSanPham()
+      } catch (error) {
+        console.error('Error loading chi tiết phiếu xuất:', error)
+        this.showError('Không thể tải dữ liệu chi tiết phiếu xuất')
+      } finally {
+        this.loading = false
+      }
+    },
+
+    editChiTiet(chiTiet) {
+      this.editingChiTiet = chiTiet
+      this.formData = {
+        maSP: chiTiet.sanPham ? chiTiet.sanPham.maSP : '',
+        soLuongXuat: chiTiet.soLuongXuat || 1,
+        donGiaXuat: chiTiet.donGiaXuat || 0,
+        ghiChu: chiTiet.ghiChu || ''
+      }
+      this.showEditModal = true
+    },
+
+    async deleteChiTiet(maCTPXK) {
+      if (!confirm('Bạn có chắc chắn muốn xóa chi tiết này?')) {
+        return
+      }
+
+      try {
+        await deleteChiTietPhieuXuat(maCTPXK)
+        this.showSuccess('Xóa chi tiết thành công')
+        await this.loadData()
+      } catch (error) {
+        console.error('Error deleting chi tiết:', error)
+        this.showError('Không thể xóa chi tiết')
+      }
+    },
+
+    async submitForm() {
+      try {
+        const chiTietData = {
+          ...this.formData,
+          phieuXuatKho: { maPXK: this.phieuXuatId },
+          thanhTien: this.formData.soLuongXuat * this.formData.donGiaXuat
+        }
+
+        if (this.showEditModal && this.editingChiTiet) {
+          await updateChiTietPhieuXuat(this.editingChiTiet.maCTPXK, chiTietData)
+          this.showSuccess('Cập nhật chi tiết thành công')
+        } else {
+          await createChiTietPhieuXuat(chiTietData)
+          this.showSuccess('Thêm chi tiết thành công')
+        }
+
+        this.closeModal()
+        await this.loadData()
+      } catch (error) {
+        console.error('Error submitting form:', error)
+        this.showError('Không thể lưu chi tiết')
+      }
+    },
+
+    closeModal() {
+      this.showAddModal = false
+      this.showEditModal = false
+      this.editingChiTiet = null
+      this.resetForm()
+    },
+
+    resetForm() {
+      this.formData = {
+        maSP: '',
+        soLuongXuat: 1,
+        donGiaXuat: 0,
+        ghiChu: ''
+      }
+    },
+
+    formatCurrency(value) {
+      if (!value) return '0 ₫'
+      return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND'
+      }).format(value)
+    },
+
+    formatDate(date) {
+      if (!date) return 'N/A'
+      return new Date(date).toLocaleDateString('vi-VN')
+    },
+
+    showSuccess(message) {
+      // Implement your success notification
+      alert(message)
+    },
+
+    showError(message) {
+      // Implement your error notification
+      alert(message)
+    }
+  }
+}
+</script>
+
+<style scoped>
+.chi-tiet-phieu-xuat-container {
+  padding: 20px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+}
+
+.btn-add {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.3s;
+}
+
+.btn-add:hover {
+  background: #219a52;
+}
+
+.table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  background: #34495e;
+  color: white;
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.data-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.table-row:hover {
+  background: #f8f9fa;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-edit, .btn-delete {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+
+.btn-edit {
+  background: #3498db;
+  color: white;
+}
+
+.btn-edit:hover {
+  background: #2980b9;
+}
+
+.btn-delete {
+  background: #e74c3c;
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #c0392b;
+}
+
+.summary {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 14px;
+  color: #7f8c8d;
+}
+
+.value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.total-amount {
+  color: #27ae60;
+  font-size: 24px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #7f8c8d;
+}
+
+.close-btn:hover {
+  color: #e74c3c;
+}
+
+.modal-form {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 30px;
+}
+
+.btn-cancel, .btn-submit {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.btn-cancel {
+  background: #95a5a6;
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: #7f8c8d;
+}
+
+.btn-submit {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-submit:hover {
+  background: #219a52;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .summary {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+  
+  .actions {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+</style>

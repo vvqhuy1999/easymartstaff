@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dashboard API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .loading {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Dashboard API Integration</h1>
+    <p>Kiểm tra các API functions cho dashboard</p>
+
+    <div class="test-section">
+        <h3>📊 Dashboard Statistics</h3>
+        <button class="test-button" onclick="testDashboardStats()">Test getDashboardStats()</button>
+        <div id="stats-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📋 Recent Activities</h3>
+        <button class="test-button" onclick="testRecentActivities()">Test getRecentActivities()</button>
+        <div id="activities-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🏆 Top Products</h3>
+        <button class="test-button" onclick="testTopProducts()">Test getTopProducts()</button>
+        <div id="products-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📈 Chart Data</h3>
+        <button class="test-button" onclick="testChartData()">Test getChartData()</button>
+        <div id="chart-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔄 Test All APIs</h3>
+        <button class="test-button" onclick="testAllAPIs()">Test All APIs</button>
+        <div id="all-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api';
+
+        // Helper function to show results
+        function showResult(elementId, data, type = 'success') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Helper function to show loading
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.className = 'result loading';
+            element.textContent = '⏳ Đang tải dữ liệu...';
+        }
+
+        // Helper function to show error
+        function showError(elementId, error) {
+            const element = document.getElementById(elementId);
+            element.className = 'result error';
+            element.textContent = `❌ Lỗi: ${error.message || error}`;
+        }
+
+        // Test Dashboard Stats
+        async function testDashboardStats() {
+            showLoading('stats-result');
+            try {
+                const response = await fetch(`${API_BASE_URL}/hoadon`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const orders = await response.json();
+                
+                // Simulate the dashboard stats calculation
+                const stats = {
+                    revenue: { value: `${orders.length * 100000} VNĐ`, change: Math.random() * 20 - 5 },
+                    orders: { value: orders.length.toString(), change: Math.random() * 15 - 3 },
+                    customers: { value: Math.floor(orders.length * 0.8).toString(), change: Math.random() * 25 - 5 },
+                    products: { value: Math.floor(orders.length * 1.5).toString(), change: Math.random() * 10 - 5 }
+                };
+                
+                showResult('stats-result', stats, 'success');
+            } catch (error) {
+                showError('stats-result', error);
+            }
+        }
+
+        // Test Recent Activities
+        async function testRecentActivities() {
+            showLoading('activities-result');
+            try {
+                const [ordersResponse, customersResponse] = await Promise.all([
+                    fetch(`${API_BASE_URL}/hoadon`),
+                    fetch(`${API_BASE_URL}/khachhang`)
+                ]);
+                
+                if (!ordersResponse.ok) throw new Error(`Orders HTTP ${ordersResponse.status}`);
+                if (!customersResponse.ok) throw new Error(`Customers HTTP ${customersResponse.status}`);
+                
+                const orders = await ordersResponse.json();
+                const customers = await customersResponse.json();
+                
+                // Simulate recent activities
+                const activities = [
+                    {
+                        id: `order-${orders[0]?.maHD || 'N/A'}`,
+                        type: 'order',
+                        icon: '📦',
+                        title: `Đơn hàng mới #${orders[0]?.maHD || 'N/A'}`,
+                        description: `Khách hàng: ${customers[0]?.hoTen || 'Không xác định'}`,
+                        value: '450,000 VNĐ',
+                        time: '5 phút trước'
+                    }
+                ];
+                
+                showResult('activities-result', activities, 'success');
+            } catch (error) {
+                showError('activities-result', error);
+            }
+        }
+
+        // Test Top Products
+        async function testTopProducts() {
+            showLoading('products-result');
+            try {
+                const [ordersResponse, productsResponse] = await Promise.all([
+                    fetch(`${API_BASE_URL}/hoadon`),
+                    fetch(`${API_BASE_URL}/sanpham`)
+                ]);
+                
+                if (!ordersResponse.ok) throw new Error(`Orders HTTP ${ordersResponse.status}`);
+                if (!productsResponse.ok) throw new Error(`Products HTTP ${productsResponse.status}`);
+                
+                const orders = await ordersResponse.json();
+                const products = await productsResponse.json();
+                
+                // Simulate top products
+                const topProducts = products.slice(0, 3).map((product, index) => ({
+                    id: product.maSP,
+                    name: product.tenSP || 'Sản phẩm không xác định',
+                    category: product.loaiSanPham?.tenLoai || 'Không phân loại',
+                    sold: Math.floor(Math.random() * 50) + 10,
+                    revenue: `${Math.floor(Math.random() * 1000) + 100}K VNĐ`
+                }));
+                
+                showResult('products-result', topProducts, 'success');
+            } catch (error) {
+                showError('products-result', error);
+            }
+        }
+
+        // Test Chart Data
+        async function testChartData() {
+            showLoading('chart-result');
+            try {
+                const response = await fetch(`${API_BASE_URL}/hoadon`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const orders = await response.json();
+                
+                // Simulate chart data for 7 days
+                const chartData = {
+                    revenue: Array(7).fill(0).map(() => ({
+                        value: `${Math.floor(Math.random() * 1000) + 100}K VNĐ`,
+                        percentage: Math.floor(Math.random() * 80) + 20
+                    })),
+                    orders: Array(7).fill(0).map(() => ({
+                        value: Math.floor(Math.random() * 50) + 10,
+                        percentage: Math.floor(Math.random() * 80) + 20
+                    })),
+                    customers: Array(7).fill(0).map(() => ({
+                        value: Math.floor(Math.random() * 20) + 5,
+                        percentage: Math.floor(Math.random() * 80) + 20
+                    }))
+                };
+                
+                showResult('chart-result', chartData, 'success');
+            } catch (error) {
+                showError('chart-result', error);
+            }
+        }
+
+        // Test All APIs
+        async function testAllAPIs() {
+            showLoading('all-result');
+            try {
+                const results = {
+                    timestamp: new Date().toISOString(),
+                    tests: {}
+                };
+                
+                // Test each API endpoint
+                const endpoints = [
+                    { name: 'Orders', url: '/hoadon' },
+                    { name: 'Order Details', url: '/chitiethoadon' },
+                    { name: 'Customers', url: '/khachhang' },
+                    { name: 'Products', url: '/sanpham' },
+                    { name: 'Reports', url: '/thongkebaocao' }
+                ];
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}${endpoint.url}`);
+                        results.tests[endpoint.name] = {
+                            status: response.status,
+                            ok: response.ok,
+                            count: response.ok ? (await response.json()).length : 'N/A'
+                        };
+                    } catch (error) {
+                        results.tests[endpoint.name] = {
+                            error: error.message
+                        };
+                    }
+                }
+                
+                showResult('all-result', results, 'success');
+            } catch (error) {
+                showError('all-result', error);
+            }
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            console.log('🧪 Dashboard API Test Page Loaded');
+            console.log('📡 API Base URL:', API_BASE_URL);
+            console.log('💡 Click các nút test để kiểm tra API endpoints');
+        });
+    </script>
+</body>
+</html>

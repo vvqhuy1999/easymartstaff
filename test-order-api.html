@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Order API Integration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .api-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-ok {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Order API Integration</h1>
+    <p>Kiểm tra kết nối và chức năng của các API đơn hàng</p>
+
+    <div class="test-section">
+        <h2>🔗 Kiểm tra kết nối API</h2>
+        <button class="test-button" onclick="testAPIConnection()">Kiểm tra kết nối</button>
+        <div id="connection-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 API Đơn hàng (HoaDon)</h2>
+        <button class="test-button" onclick="testGetAllOrders()">Lấy tất cả đơn hàng</button>
+        <button class="test-button" onclick="testGetOrderById()">Lấy đơn hàng theo ID</button>
+        <div id="orders-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🛍️ API Chi tiết đơn hàng (ChiTietHoaDon)</h2>
+        <button class="test-button" onclick="testGetAllOrderDetails()">Lấy tất cả chi tiết</button>
+        <div id="order-details-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>👥 API Khách hàng (KhachHang)</h2>
+        <button class="test-button" onclick="testGetAllCustomers()">Lấy tất cả khách hàng</button>
+        <div id="customers-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📦 API Sản phẩm (SanPham)</h2>
+        <button class="test-button" onclick="testGetAllProducts()">Lấy tất cả sản phẩm</button>
+        <button class="test-button" onclick="testGetOptimizedProducts()">Lấy sản phẩm tối ưu</button>
+        <div id="products-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>💰 API Giá sản phẩm (GiaSanPham)</h2>
+        <button class="test-button" onclick="testGetAllProductPrices()">Lấy tất cả giá</button>
+        <div id="prices-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>👤 API Người dùng (NguoiDung)</h2>
+        <button class="test-button" onclick="testGetAllUsers()">Lấy tất cả người dùng</button>
+        <div id="users-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 API Tổng hợp</h2>
+        <button class="test-button" onclick="testGetCompleteOrderData()">Lấy dữ liệu đơn hàng hoàn chỉnh</button>
+        <div id="complete-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api';
+
+        // Helper function to display results
+        function displayResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            const className = isError ? 'result error' : 'result success';
+            element.className = className;
+            
+            if (isError) {
+                element.textContent = `❌ Lỗi: ${data}`;
+            } else {
+                element.textContent = `✅ Thành công!\n\n${JSON.stringify(data, null, 2)}`;
+            }
+        }
+
+        // Test API connection
+        async function testAPIConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/hoadon`);
+                if (response.ok) {
+                    displayResult('connection-result', 'Kết nối API thành công!');
+                } else {
+                    displayResult('connection-result', `Lỗi HTTP: ${response.status}`, true);
+                }
+            } catch (error) {
+                displayResult('connection-result', `Lỗi kết nối: ${error.message}`, true);
+            }
+        }
+
+        // Test Orders API
+        async function testGetAllOrders() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/hoadon`);
+                if (response.ok) {
+                    const orders = await response.json();
+                    displayResult('orders-result', orders);
+                } else {
+                    displayResult('orders-result', `Lỗi HTTP: ${response.status}`, true);
+                }
+            } catch (error) {
+                displayResult('orders-result', `Lỗi: ${error.message}`, true);
+            }
+        }
+
+        async function testGetOrderById() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/hoadon/1`);
+                if (response.ok) {
+                    const order = await response.json();
+                    displayResult('orders-result', order);
+                } else if (response.status === 404) {
+                    displayResult('orders-result', 'Không tìm thấy đơn hàng với ID = 1');
+                } else {
+                    displayResult('orders-result', `Lỗi HTTP: ${response.status}`, true);
+                }
+            } catch (error) {
+                displayResult('orders-result', `Lỗi: ${error.message}`, true);
+            }
+        }
+
+        // Test Order Details API
+        async function testGetAllOrderDetails() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/chitiethoadon`);
+                if (response.ok) {
+                    const details = await response.json();
+                    displayResult('order-details-result', details);
+                } else {
+                    displayResult('order-details-result', `Lỗi HTTP: ${response.status}`, true);
+                }
+            } catch (error) {
+                displayResult('order-details-result', `Lỗi: ${error.message}`, true);
+            }
+        }
+
+        // Test Customers API
+        async function testGetAllCustomers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/khachhang`);
+                if (response.ok) {
+                    const customers = await response.json();
+                    displayResult('customers-result', customers);
+                } else {
+                    displayResult('customers-result', `Lỗi HTTP: ${response.status}`, true);
+                }
+            } catch (error) {
+                displayResult('customers-result', `Lỗi: ${error.message}`, true);
+            }
+        }
+
+        // Test Products API
+        async function testGetAllProducts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sanpham`);
+                if (response.ok) {
+                    const products = await response.json();
+                    displayResult('products-result', products);
+                } else {
+                    displayResult('products-result', `Lỗi HTTP: ${response.status}`, true);
+                }
+            } catch (error) {
+                displayResult('products-result', `Lỗi: ${error.message}`, true);
+            }
+        }
+
+        async function testGetOptimizedProducts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sanpham/optimized`);
+                if (response.ok) {
+                    const products = await response.json();
+                    displayResult('products-result', products);
+                } else {
+                    displayResult('products-result', `Lỗi HTTP: ${response.status}`, true);
+                }
+            } catch (error) {
+                displayResult('products-result', `Lỗi: ${error.message}`, true);
+            }
+        }
+
+        // Test Product Prices API
+        async function testGetAllProductPrices() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/giasanpham`);
+                if (response.ok) {
+                    const prices = await response.json();
+                    displayResult('prices-result', prices);
+                } else {
+                    displayResult('prices-result', `Lỗi HTTP: ${response.status}`, true);
+                }
+            } catch (error) {
+                displayResult('prices-result', `Lỗi: ${error.message}`, true);
+            }
+        }
+
+        // Test Users API
+        async function testGetAllUsers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/nguoidung`);
+                if (response.ok) {
+                    const users = await response.json();
+                    displayResult('users-result', users);
+                } else {
+                    displayResult('users-result', `Lỗi HTTP: ${response.status}`, true);
+                }
+            } catch (error) {
+                displayResult('users-result', `Lỗi: ${error.message}`, true);
+            }
+        }
+
+        // Test Complete Order Data
+        async function testGetCompleteOrderData() {
+            try {
+                // This would require the composite function from api.js
+                // For now, we'll test the individual APIs
+                const [orders, orderDetails, customers, products, prices] = await Promise.all([
+                    fetch(`${API_BASE_URL}/hoadon`).then(r => r.ok ? r.json() : []),
+                    fetch(`${API_BASE_URL}/chitiethoadon`).then(r => r.ok ? r.json() : []),
+                    fetch(`${API_BASE_URL}/khachhang`).then(r => r.ok ? r.json() : []),
+                    fetch(`${API_BASE_URL}/sanpham`).then(r => r.ok ? r.json() : []),
+                    fetch(`${API_BASE_URL}/giasanpham`).then(r => r.ok ? r.json() : [])
+                ]);
+
+                const completeData = {
+                    orders: orders.length,
+                    orderDetails: orderDetails.length,
+                    customers: customers.length,
+                    products: products.length,
+                    prices: prices.length,
+                    message: 'Dữ liệu tổng hợp từ tất cả API'
+                };
+
+                displayResult('complete-result', completeData);
+            } catch (error) {
+                displayResult('complete-result', `Lỗi: ${error.message}`, true);
+            }
+        }
+
+        // Auto-test connection on page load
+        window.addEventListener('load', () => {
+            testAPIConnection();
+        });
+    </script>
+</body>
+</html>

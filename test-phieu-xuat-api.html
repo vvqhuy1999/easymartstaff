@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Phiếu Xuất Hàng</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .api-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .api-section h3 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .loading {
+            color: #007bff;
+            font-style: italic;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test API Phiếu Xuất Hàng</h1>
+    
+    <div class="container">
+        <h2>Thống kê tổng quan</h2>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalPhieuXuat">-</div>
+                <div class="stat-label">Tổng phiếu xuất</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalSanPham">-</div>
+                <div class="stat-label">Tổng sản phẩm</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalChiTiet">-</div>
+                <div class="stat-label">Tổng chi tiết</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalKho">-</div>
+                <div class="stat-label">Tổng kho</div>
+            </div>
+        </div>
+        
+        <button class="test-button" onclick="loadAllData()">Tải tất cả dữ liệu</button>
+        <button class="test-button" onclick="clearResults()">Xóa kết quả</button>
+    </div>
+
+    <div class="api-section">
+        <h3>API Phiếu Xuất Kho</h3>
+        <button class="test-button" onclick="testGetAllPhieuXuatKho()">Lấy tất cả phiếu xuất</button>
+        <button class="test-button" onclick="testGetPhieuXuatKhoById()">Lấy phiếu xuất theo ID</button>
+        <button class="test-button" onclick="testCreatePhieuXuatKho()">Tạo phiếu xuất mới</button>
+        <button class="test-button" onclick="testUpdatePhieuXuatKho()">Cập nhật phiếu xuất</button>
+        <button class="test-button" onclick="testDeletePhieuXuatKho()">Xóa phiếu xuất</button>
+        <div id="phieuXuatResult" class="result"></div>
+    </div>
+
+    <div class="api-section">
+        <h3>API Sản Phẩm</h3>
+        <button class="test-button" onclick="testGetAllSanPham()">Lấy tất cả sản phẩm</button>
+        <button class="test-button" onclick="testGetSanPhamById()">Lấy sản phẩm theo ID</button>
+        <div id="sanPhamResult" class="result"></div>
+    </div>
+
+    <div class="api-section">
+        <h3>API Chi Tiết Phiếu Xuất</h3>
+        <button class="test-button" onclick="testGetAllChiTietPhieuXuat()">Lấy tất cả chi tiết</button>
+        <div id="chiTietResult" class="result"></div>
+    </div>
+
+    <div class="api-section">
+        <h3>API Kho</h3>
+        <button class="test-button" onclick="testGetAllKho()">Lấy tất cả kho</button>
+        <div id="khoResult" class="result"></div>
+    </div>
+
+    <div class="api-section">
+        <h3>API Nhân Viên</h3>
+        <button class="test-button" onclick="testGetAllNhanVien()">Lấy tất cả nhân viên</button>
+        <div id="nhanVienResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api';
+        
+        // Utility functions
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = `result ${isError ? 'error' : 'success'}`;
+        }
+        
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.textContent = 'Đang tải...';
+            element.className = 'result loading';
+        }
+        
+        function clearResults() {
+            const results = document.querySelectorAll('.result');
+            results.forEach(result => {
+                result.textContent = '';
+                result.className = 'result';
+            });
+        }
+        
+        // Load all data and update stats
+        async function loadAllData() {
+            try {
+                const [phieuXuat, sanPham, chiTiet, kho, nhanVien] = await Promise.all([
+                    fetch(`${API_BASE_URL}/phieuxuatkho`).then(r => r.json()),
+                    fetch(`${API_BASE_URL}/sanpham`).then(r => r.json()),
+                    fetch(`${API_BASE_URL}/chitietphieuxuat`).then(r => r.json()),
+                    fetch(`${API_BASE_URL}/kho`).then(r => r.json()),
+                    fetch(`${API_BASE_URL}/nhanvien`).then(r => r.json())
+                ]);
+                
+                document.getElementById('totalPhieuXuat').textContent = phieuXuat.length;
+                document.getElementById('totalSanPham').textContent = sanPham.length;
+                document.getElementById('totalChiTiet').textContent = chiTiet.length;
+                document.getElementById('totalKho').textContent = kho.length;
+                
+                console.log('All data loaded successfully');
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+        
+        // PhieuXuatKho API tests
+        async function testGetAllPhieuXuatKho() {
+            showLoading('phieuXuatResult');
+            try {
+                const response = await fetch(`${API_BASE_URL}/phieuxuatkho`);
+                const data = await response.json();
+                showResult('phieuXuatResult', data);
+            } catch (error) {
+                showResult('phieuXuatResult', { error: error.message }, true);
+            }
+        }
+        
+        async function testGetPhieuXuatKhoById() {
+            const id = prompt('Nhập ID phiếu xuất:');
+            if (!id) return;
+            
+            showLoading('phieuXuatResult');
+            try {
+                const response = await fetch(`${API_BASE_URL}/phieuxuatkho/${id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('phieuXuatResult', data);
+                } else {
+                    showResult('phieuXuatResult', { error: `HTTP ${response.status}: ${response.statusText}` }, true);
+                }
+            } catch (error) {
+                showResult('phieuXuatResult', { error: error.message }, true);
+            }
+        }
+        
+        async function testCreatePhieuXuatKho() {
+            const testData = {
+                kho: { maKho: 1 },
+                nhanVienLap: { maNV: 1 },
+                ngayXuat: new Date().toISOString().split('T')[0],
+                trangThai: 0,
+                ghiChu: 'Test tạo phiếu xuất',
+                isDeleted: false
+            };
+            
+            showLoading('phieuXuatResult');
+            try {
+                const response = await fetch(`${API_BASE_URL}/phieuxuatkho`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('phieuXuatResult', { message: 'Tạo thành công', data });
+                } else {
+                    const errorData = await response.json();
+                    showResult('phieuXuatResult', { error: `HTTP ${response.status}`, details: errorData }, true);
+                }
+            } catch (error) {
+                showResult('phieuXuatResult', { error: error.message }, true);
+            }
+        }
+        
+        async function testUpdatePhieuXuatKho() {
+            const id = prompt('Nhập ID phiếu xuất cần cập nhật:');
+            if (!id) return;
+            
+            const testData = {
+                kho: { maKho: 1 },
+                nhanVienLap: { maNV: 1 },
+                ngayXuat: new Date().toISOString().split('T')[0],
+                trangThai: 1,
+                ghiChu: 'Test cập nhật phiếu xuất',
+                isDeleted: false
+            };
+            
+            showLoading('phieuXuatResult');
+            try {
+                const response = await fetch(`${API_BASE_URL}/phieuxuatkho/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('phieuXuatResult', { message: 'Cập nhật thành công', data });
+                } else {
+                    const errorData = await response.json();
+                    showResult('phieuXuatResult', { error: `HTTP ${response.status}`, details: errorData }, true);
+                }
+            } catch (error) {
+                showResult('phieuXuatResult', { error: error.message }, true);
+            }
+        }
+        
+        async function testDeletePhieuXuatKho() {
+            const id = prompt('Nhập ID phiếu xuất cần xóa:');
+            if (!id) return;
+            
+            if (!confirm(`Bạn có chắc chắn muốn xóa phiếu xuất ID ${id}?`)) return;
+            
+            showLoading('phieuXuatResult');
+            try {
+                const response = await fetch(`${API_BASE_URL}/phieuxuatkho/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showResult('phieuXuatResult', { message: 'Xóa thành công' });
+                } else {
+                    showResult('phieuXuatResult', { error: `HTTP ${response.status}: ${response.statusText}` }, true);
+                }
+            } catch (error) {
+                showResult('phieuXuatResult', { error: error.message }, true);
+            }
+        }
+        
+        // SanPham API tests
+        async function testGetAllSanPham() {
+            showLoading('sanPhamResult');
+            try {
+                const response = await fetch(`${API_BASE_URL}/sanpham`);
+                const data = await response.json();
+                showResult('sanPhamResult', data);
+            } catch (error) {
+                showResult('sanPhamResult', { error: error.message }, true);
+            }
+        }
+        
+        async function testGetSanPhamById() {
+            const id = prompt('Nhập mã sản phẩm:');
+            if (!id) return;
+            
+            showLoading('sanPhamResult');
+            try {
+                const response = await fetch(`${API_BASE_URL}/sanpham/${id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('sanPhamResult', data);
+                } else {
+                    showResult('sanPhamResult', { error: `HTTP ${response.status}: ${response.statusText}` }, true);
+                }
+            } catch (error) {
+                showResult('sanPhamResult', { error: error.message }, true);
+            }
+        }
+        
+        // ChiTietPhieuXuat API tests
+        async function testGetAllChiTietPhieuXuat() {
+            showLoading('chiTietResult');
+            try {
+                const response = await fetch(`${API_BASE_URL}/chitietphieuxuat`);
+                const data = await response.json();
+                showResult('chiTietResult', data);
+            } catch (error) {
+                showResult('chiTietResult', { error: error.message }, true);
+            }
+        }
+        
+        // Kho API tests
+        async function testGetAllKho() {
+            showLoading('khoResult');
+            try {
+                const response = await fetch(`${API_BASE_URL}/kho`);
+                const data = await response.json();
+                showResult('khoResult', data);
+            } catch (error) {
+                showResult('khoResult', { error: error.message }, true);
+            }
+        }
+        
+        // NhanVien API tests
+        async function testGetAllNhanVien() {
+            showLoading('nhanVienResult');
+            try {
+                const response = await fetch(`${API_BASE_URL}/nhanvien`);
+                const data = await response.json();
+                showResult('nhanVienResult', data);
+            } catch (error) {
+                showResult('nhanVienResult', { error: error.message }, true);
+            }
+        }
+        
+        // Auto-load data when page loads
+        window.addEventListener('load', loadAllData);
+    </script>
+</body>
+</html>
