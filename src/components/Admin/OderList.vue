@@ -43,8 +43,61 @@
             </div>
           </div>
           
+          <div class="stat-card pending-orders">
+            <div class="stat-icon pending">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <h3>{{ orderStats.pending }}</h3>
+              <p>Đang chờ</p>
+              <div class="stat-trend neutral">Chờ xử lý</div>
+            </div>
+          </div>
+          
+          <div class="stat-card processing-orders">
+            <div class="stat-icon processing">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <h3>{{ orderStats.processing }}</h3>
+              <p>Thanh toán</p>
+              <div class="stat-trend positive">Đang xử lý</div>
+            </div>
+          </div>
+          
+          <div class="stat-card completed-orders">
+            <div class="stat-icon completed">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3v18h18"/>
+                <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <h3>{{ orderStats.completed }}</h3>
+              <p>Hoàn thành</p>
+              <div class="stat-trend positive">+8.5% so với tháng trước</div>
+            </div>
+          </div>
+          
+          <div class="stat-card cancelled-orders">
+            <div class="stat-icon cancelled">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <h3>{{ orderStats.cancelled }}</h3>
+              <p>Đã hủy</p>
+              <div class="stat-trend negative">Đã hủy</div>
+            </div>
+          </div>
+          
           <div class="stat-card revenue">
-            <div class="stat-icon">
+            <div class="stat-icon revenue">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
               </svg>
@@ -53,35 +106,6 @@
               <h3>{{ formatCurrency(orderStats.totalRevenue) }}</h3>
               <p>Tổng doanh thu</p>
               <div class="stat-trend positive">+8.5% so với tháng trước</div>
-            </div>
-          </div>
-          
-          <div class="stat-card average-order">
-            <div class="stat-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 3v18h18"/>
-                <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
-              </svg>
-            </div>
-            <div class="stat-info">
-              <h3>{{ formatCurrency(orderStats.averageOrder) }}</h3>
-              <p>Đơn hàng trung bình</p>
-              <div class="stat-trend neutral">Giữ nguyên</div>
-            </div>
-          </div>
-          
-          <div class="stat-card total-products">
-            <div class="stat-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-                <path d="M9 14l2 2 4-4"/>
-              </svg>
-            </div>
-            <div class="stat-info">
-              <h3>{{ orderStats.totalProducts }}</h3>
-              <p>Tổng sản phẩm</p>
-              <div class="stat-trend positive">+15% so với tháng trước</div>
             </div>
           </div>
         </div>
@@ -116,6 +140,22 @@
 
       <!-- Main Content with Enhanced Layout -->
       <div v-else class="main-content">
+        <!-- Status Tabs -->
+        <div class="status-tabs-section">
+          <div class="status-tabs">
+            <button 
+              v-for="tab in statusTabs" 
+              :key="tab.value"
+              @click="setActiveStatus(tab.value)"
+              :class="['status-tab', { active: activeStatus === tab.value }]"
+            >
+              <span class="tab-icon">{{ tab.icon }}</span>
+              <span class="tab-label">{{ tab.label }}</span>
+              <span class="tab-count">{{ getOrderCountByStatus(tab.value) }}</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Enhanced Toolbar -->
         <div class="toolbar-section">
           <div class="toolbar-content">
@@ -163,7 +203,7 @@
         <!-- Enhanced Orders Table -->
         <div class="table-section">
           <div class="table-header">
-            <h3>Danh sách đơn hàng</h3>
+            <h3>{{ getStatusTabLabel(activeStatus) }}</h3>
             <span class="order-count">{{ filteredOrders.length }} đơn hàng</span>
           </div>
           
@@ -176,6 +216,7 @@
                   <th>Sản phẩm</th>
                   <th>Ngày đặt</th>
                   <th>Tổng tiền</th>
+                  <th>Trạng thái</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
@@ -208,6 +249,11 @@
                   <td class="order-total">
                     <div class="total-badge">{{ formatCurrency(order.total) }}</div>
                   </td>
+                  <td class="order-status">
+                    <div :class="['status-badge', getStatusClass(order.status)]">
+                      {{ getStatusLabel(order.status) }}
+                    </div>
+                  </td>
                   <td>
                     <div class="action-buttons">
                       <button @click="viewOrderDetail(order)" class="action-btn view-btn" title="Xem chi tiết">
@@ -239,7 +285,7 @@
               <div class="no-data-content">
                 <div class="no-data-icon">📦</div>
                 <h3>Không tìm thấy đơn hàng</h3>
-                <p>{{ searchQuery ? 'Không có đơn hàng nào phù hợp với từ khóa tìm kiếm' : 'Chưa có đơn hàng nào trong hệ thống' }}</p>
+                <p>{{ searchQuery ? 'Không có đơn hàng nào phù hợp với từ khóa tìm kiếm' : `Chưa có đơn hàng nào ở trạng thái ${getStatusTabLabel(activeStatus)}` }}</p>
               </div>
             </div>
           </div>
@@ -301,28 +347,24 @@
                 <h4>Sản phẩm đã đặt</h4>
               </div>
               <div class="product-list">
-                <div v-for="product in selectedOrder.products" :key="product.id" class="product-item">
+                <div v-for="product in selectedOrder.products" :key="product.maCTHD || product.id" class="product-item">
                   <div class="product-info">
-                    <span class="product-name">{{ product.name }}</span>
-                    <span class="product-details">{{ product.variant }} - SL: {{ product.quantity }}</span>
+                    <span class="product-name">{{ product.sanPham?.tenSP || product.tenSP || 'Sản phẩm không xác định' }}</span>
+                    <span class="product-details">{{ product.sanPham?.loaiSanPham?.tenLoai || 'N/A' }} - SL: {{ product.soLuong || product.quantity || 0 }}</span>
                   </div>
-                  <span class="product-price">{{ formatCurrency(product.price * product.quantity) }}</span>
+                  <span class="product-price">{{ formatCurrency((product.donGia || product.price || 0) * (product.soLuong || product.quantity || 0)) }}</span>
                 </div>
               </div>
-              <div class="total-section">
-                <div class="total-row">
-                  <span>Tạm tính</span>
-                  <span>{{ formatCurrency(selectedOrder.subtotal) }}</span>
-                </div>
-                <div class="total-row">
-                  <span>Phí giao hàng</span>
-                  <span>{{ formatCurrency(selectedOrder.shipping) }}</span>
-                </div>
-                <div class="total-row final-total">
-                  <span>Tổng cộng</span>
-                  <span>{{ formatCurrency(selectedOrder.total) }}</span>
-                </div>
-              </div>
+                             <div class="total-section">
+                 <div class="total-row">
+                   <span>Tạm tính</span>
+                   <span>{{ formatCurrency(selectedOrder.subtotal) }}</span>
+                 </div>
+                 <div class="total-row final-total">
+                   <span>Tổng cộng</span>
+                   <span>{{ formatCurrency(selectedOrder.total) }}</span>
+                 </div>
+               </div>
             </div>
           </div>
         </div>
@@ -365,7 +407,8 @@ import AdminHeader from './AdminHeader.vue'
 import AdminFooter from './AdminFooter.vue'
 import { 
   getCompleteOrderData, 
-  deleteOrder as deleteOrderAPI 
+  deleteOrder as deleteOrderAPI,
+  getAllOrders // Thêm getAllOrders vào import
 } from '../api.js'
 
 // Reactive data
@@ -378,10 +421,22 @@ const showDetailModal = ref(false)
 const showConfirm = ref(false)
 const selectedOrder = ref(null)
 const deleteOrderId = ref(null)
+const activeStatus = ref(0) // Default to pending orders
+
+// Status tabs configuration
+const statusTabs = ref([
+  { value: 0, label: 'Đang chờ', icon: '⏳' },
+  { value: 1, label: 'Thanh toán', icon: '💳' },
+  { value: 2, label: 'Hoàn thành', icon: '✅' },
+  { value: 3, label: 'Đã hủy', icon: '❌' }
+])
 
 // Computed properties
 const filteredOrders = computed(() => {
   let filtered = orders.value
+
+  // Status filter
+  filtered = filtered.filter(order => order.status === activeStatus.value)
 
   // Search filter
   if (searchQuery.value) {
@@ -417,16 +472,47 @@ const orderStats = computed(() => {
     total: 0,
     totalRevenue: 0,
     averageOrder: 0,
-    totalProducts: 0
+    totalProducts: 0,
+    pending: 0,
+    processing: 0,
+    completed: 0,
+    cancelled: 0
+  }
+
+  if (!orders.value || orders.value.length === 0) {
+    return stats
   }
 
   orders.value.forEach(order => {
     stats.total++
-    stats.totalRevenue += order.total
-    stats.totalProducts += order.products.reduce((sum, p) => sum + p.quantity, 0)
+    stats.totalRevenue += order.total || 0
+    
+    // Tính tổng sản phẩm
+    if (order.products && Array.isArray(order.products)) {
+      stats.totalProducts += order.products.reduce((sum, p) => sum + (p.soLuong || 0), 0)
+    }
+    
+    // Phân loại theo trạng thái
+    switch (order.status) {
+      case 0:
+        stats.pending++
+        break
+      case 1:
+        stats.processing++
+        break
+      case 2:
+        stats.completed++
+        break
+      case 3:
+        stats.cancelled++
+        break
+      default:
+        stats.pending++ // Default to pending
+        break
+    }
   })
 
-  stats.averageOrder = orders.value.length > 0 ? stats.totalRevenue / orders.value.length : 0
+  stats.averageOrder = stats.total > 0 ? stats.totalRevenue / stats.total : 0
 
   return stats
 })
@@ -436,14 +522,55 @@ const loadOrders = async () => {
   try {
     loading.value = true
     error.value = null
-    const orderData = await getCompleteOrderData()
-    orders.value = orderData
+    console.log('🔄 [OderList] Loading orders...')
+    
+    // Gọi trực tiếp API đơn hàng thay vì getCompleteOrderData
+    const orderData = await getAllOrders()
+    console.log('✅ [OderList] Orders loaded:', orderData)
+    
+    // Chuyển đổi dữ liệu từ API sang format hiển thị
+    orders.value = orderData.map(order => ({
+      id: order.maHD,
+      customer: order.khachHang?.hoTen || 'Không xác định',
+      phone: order.khachHang?.sdt || 'N/A',
+      address: order.khachHang?.diaChi || 'N/A',
+      date: order.ngayTao || order.ngayLap || new Date().toISOString(),
+      total: order.tongTien || 0,
+      subtotal: order.tongTienHang || 0,
+      
+      status: mapOrderStatus(order.trangThai),
+      products: order.chiTietHoaDon || [],
+      originalOrder: order,
+      customerData: order.khachHang
+    }))
+    
+    console.log('✅ [OderList] Processed orders:', orders.value)
   } catch (err) {
-    console.error('Error loading orders:', err)
+    console.error('❌ [OderList] Error loading orders:', err)
     error.value = 'Không thể tải dữ liệu đơn hàng: ' + err.message
   } finally {
     loading.value = false
   }
+}
+
+// Hàm helper để map trạng thái đơn hàng
+const mapOrderStatus = (status) => {
+  if (!status) return 0 // Default to pending
+  
+  // Map từ backend status sang frontend status
+  const statusMap = {
+    'CHO_XU_LY': 0,    // Đang chờ
+    'DANG_XU_LY': 1,   // Thanh toán
+    'DANG_GIAO': 1,    // Thanh toán
+    'DA_GIAO': 2,      // Hoàn thành
+    'DA_HUY': 3,       // Đã hủy
+    0: 0,              // Đang chờ
+    1: 1,              // Thanh toán
+    2: 2,              // Hoàn thành
+    3: 3               // Đã hủy
+  }
+  
+  return statusMap[status] || 0
 }
 
 const formatCurrency = (amount) => {
@@ -466,11 +593,18 @@ const formatDate = (dateString) => {
 }
 
 const getProductPreview = (products) => {
-  if (!products || products.length === 0) return 'Không có sản phẩm'
-  if (products.length === 1) {
-    return products[0].name
+  if (!products || !Array.isArray(products) || products.length === 0) {
+    return 'Không có sản phẩm'
   }
-  return `${products[0].name} + ${products.length - 1} sản phẩm khác`
+  
+  if (products.length === 1) {
+    const product = products[0]
+    return product.sanPham?.tenSP || product.tenSP || 'Sản phẩm không xác định'
+  }
+  
+  const firstProduct = products[0]
+  const firstName = firstProduct.sanPham?.tenSP || firstProduct.tenSP || 'Sản phẩm không xác định'
+  return `${firstName} + ${products.length - 1} sản phẩm khác`
 }
 
 const clearSearch = () => {
@@ -519,8 +653,42 @@ const exportOrders = () => {
   alert('Đang xuất file Excel...')
 }
 
+const setActiveStatus = (status) => {
+  activeStatus.value = status
+}
+
+const getStatusTabLabel = (status) => {
+  const tab = statusTabs.value.find(tab => tab.value === status)
+  return tab ? tab.label : 'Tất cả đơn hàng'
+}
+
+const getOrderCountByStatus = (status) => {
+  return orders.value.filter(order => order.status === status).length
+}
+
+const getStatusLabel = (status) => {
+  switch (status) {
+    case 0: return 'Đang chờ'
+    case 1: return 'Thanh toán'
+    case 2: return 'Hoàn thành'
+    case 3: return 'Đã hủy'
+    default: return 'Không xác định'
+  }
+}
+
+const getStatusClass = (status) => {
+  switch (status) {
+    case 0: return 'status-pending'
+    case 1: return 'status-processing'
+    case 2: return 'status-completed'
+    case 3: return 'status-cancelled'
+    default: return 'status-unknown'
+  }
+}
+
 // Lifecycle
 onMounted(() => {
+  console.log('🚀 [OderList] Component mounted, starting to load orders...')
   loadOrders()
 })
 </script>
@@ -716,30 +884,32 @@ onMounted(() => {
 
 .stat-icon.pending {
   background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: white;
 }
 
 .stat-icon.processing {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
 }
 
 .stat-icon.completed {
   background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.stat-icon.cancelled {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
 }
 
 .stat-icon.revenue {
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
 }
 
 .stat-icon.total {
   background: linear-gradient(135deg, #4f46e5, #4338ca);
-}
-
-.stat-icon.average {
-  background: linear-gradient(135deg, #10b981, #059669);
-}
-
-.stat-icon.products {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
 }
 
 .stat-card.total-orders .stat-icon {
@@ -759,6 +929,26 @@ onMounted(() => {
 
 .stat-card.total-products .stat-icon {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.stat-card.pending-orders .stat-icon {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: white;
+}
+
+.stat-card.processing-orders .stat-icon {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.stat-card.completed-orders .stat-icon {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.stat-card.cancelled-orders .stat-icon {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
 }
 
@@ -1561,6 +1751,123 @@ onMounted(() => {
   height: 20px;
 }
 
+/* Status Badges */
+.order-status {
+  min-width: 120px;
+}
+
+.status-badge {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  display: inline-block;
+  min-width: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fbbf24;
+}
+
+.status-processing {
+  background: #dbeafe;
+  color: #2563eb;
+  border: 1px solid #60a5fa;
+}
+
+.status-completed {
+  background: #d1fae5;
+  color: #059669;
+  border: 1px solid #34d399;
+}
+
+.status-cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #f87171;
+}
+
+.status-unknown {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+/* Status Tabs */
+.status-tabs-section {
+  margin-bottom: 24px;
+  background: #f8fafc;
+  padding: 16px 24px;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.status-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.status-tabs .status-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #bae6fd;
+  min-width: 120px;
+  text-align: center;
+}
+
+.status-tabs .status-tab.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+}
+
+.status-tabs .status-tab:hover:not(.active) {
+  background: #bae6fd;
+  border-color: #bae6fd;
+  transform: translateY(-2px);
+}
+
+.status-tabs .tab-icon {
+  font-size: 1.5rem;
+}
+
+.status-tabs .tab-label {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-tabs .tab-count {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+.status-tabs .status-tab.active .tab-count {
+  color: white;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .order-management-container {
@@ -1601,6 +1908,31 @@ onMounted(() => {
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .status-tabs-section {
+    padding: 12px 16px;
+  }
+
+  .status-tabs {
+    gap: 8px;
+  }
+
+  .status-tabs .status-tab {
+    min-width: 100px;
+    padding: 6px 12px;
+  }
+
+  .status-tabs .tab-icon {
+    font-size: 1.25rem;
+  }
+
+  .status-tabs .tab-label {
+    font-size: 0.8rem;
+  }
+
+  .status-tabs .tab-count {
+    font-size: 1.1rem;
   }
 
   .toolbar-content {
@@ -1679,6 +2011,23 @@ onMounted(() => {
   
   .stat-info h3 {
     font-size: 1.5rem;
+  }
+  
+  .status-tabs .status-tab {
+    min-width: 80px;
+    padding: 4px 8px;
+  }
+
+  .status-tabs .tab-icon {
+    font-size: 1rem;
+  }
+
+  .status-tabs .tab-label {
+    font-size: 0.7rem;
+  }
+
+  .status-tabs .tab-count {
+    font-size: 1rem;
   }
   
   .action-buttons {

@@ -105,7 +105,7 @@ export const hasToken = () => {
 // Check if user has valid role for admin access
 export const hasValidRole = () => {
   const userRole = getCookie('user_role')
-  const allowedRoles = ['MANAGER', 'STAFF', 'ADMIN']
+  const allowedRoles = ['MANAGER', 'EMPLOYEE', 'ADMIN']
   return !!(userRole && allowedRoles.includes(userRole.toUpperCase()))
 }
 

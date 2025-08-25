@@ -157,8 +157,8 @@ const handleLogin = async () => {
       // Không cần validate riêng biệt
       
       // Kiểm tra role của người dùng
-      // Chỉ cho phép đăng nhập với role MANAGER, STAFF, hoặc ADMIN
-      const allowedRoles = ['MANAGER', 'STAFF', 'ADMIN'];
+      // Chỉ cho phép đăng nhập với role MANAGER, EMPLOYEE, hoặc ADMIN
+      const allowedRoles = ['MANAGER', 'EMPLOYEE', 'ADMIN'];
       
       if (userRole && allowedRoles.includes(userRole.toUpperCase())) {
         // Lưu token sử dụng tokenStorage (luôn lưu 1 ngày)
@@ -191,7 +191,7 @@ const handleLogin = async () => {
         }
       } else {
         // Role không được phép
-        errorMessage.value = 'Bạn không có quyền truy cập hệ thống quản trị. Chỉ MANAGER, STAFF, và ADMIN mới được phép.';
+        errorMessage.value = 'Bạn không có quyền truy cập hệ thống quản trị. Chỉ MANAGER, EMPLOYEE, và ADMIN mới được phép.';
       }
     } else {
       errorMessage.value = 'Token không hợp lệ từ server! Vui lòng kiểm tra lại thông tin đăng nhập.';

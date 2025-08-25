@@ -1855,8 +1855,15 @@ export const login = async (credentials) => {
     })
     
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Login failed: ${response.status} - ${errorText}`)
+      let friendlyMessage = 'Đăng nhập không thành công. Vui lòng thử lại.'
+      try {
+        const errJson = await response.json()
+        if (errJson?.message) friendlyMessage = errJson.message
+        else if (errJson?.result?.message) friendlyMessage = errJson.result.message
+      } catch (_) {
+        // ignore parse error; keep friendly default
+      }
+      throw new Error(friendlyMessage)
     }
     
     const result = await response.json()
